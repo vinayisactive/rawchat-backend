@@ -23,6 +23,43 @@ model User{
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt()
 
+  ChatGroup ChatGroup[]
+  MemberShip Membership[]
+
   @@map("users")
 }
 
+model ChatGroup {
+  id String @id @default(uuid())
+  owner_id String
+  name String
+  password String
+  users Membership[]
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt()
+
+  owner User @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+ 
+  @@index([created_at])
+  @@map("chat_groups")
+}
+
+enum Roles {
+  OWNER
+  MEMBER
+}
+
+model Membership {
+  id String @id @default(uuid())
+  group_id String
+  user_id String
+  role Roles @default(MEMBER)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt()
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  chat_group ChatGroup @relation(fields: [group_id], references: [id], onDelete: Cascade)
+
+  @@unique([group_id, user_id])
+  @@map("group_members")
+} 
