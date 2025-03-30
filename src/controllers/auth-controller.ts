@@ -27,9 +27,11 @@ class AuthController {
             const googleUser = ticket.getPayload(); 
 
             if(!googleUser?.email){
-                return response
+                response
                 .status(400)
                 .json({ message: "Invalid OAuth access token."}) 
+
+                return; 
             }
 
             const isExistingUser = await db.user.findUnique({
@@ -44,11 +46,13 @@ class AuthController {
             }); 
 
             if(!googleUser.name || !googleUser.aud){
-                return response
+                response
                 .status(400) 
                 .json({
                     message: "OAuth credentials are missing for google login."
                 })
+
+                return; 
             } 
 
             if(!isExistingUser){
@@ -74,17 +78,20 @@ class AuthController {
                 } )
 
 
-                return response
+                 response
                 .status(200)
                 .json({
                     message: "User create successfully via OAuth.",
                     user: createUser,
                     token
                 }); 
+
+                return; 
             }
 
             const token = jwt.sign({
                 id: isExistingUser.id,
+                name: isExistingUser.name,
                 email: isExistingUser.email
             }, 
             process.env.JWT_SECRET!,
@@ -93,19 +100,23 @@ class AuthController {
             }); 
 
 
-            return response
+            response
             .status(200)
             .json({
                 message: "User logged in successfully via OAuth.",
                 user: isExistingUser,
                 token
             }); 
+
+            return; 
    
         } catch (error) {
             console.log("OAuth login error: ", error); 
-            return response
+             response
             .status(500)
             .json({ message: "An error occured during Oauth login."}); 
+
+            return; 
         }
       }
 
@@ -115,42 +126,52 @@ class AuthController {
         },
         select: {
             id: true,
+            name: true,
             email: true,
             password: true
         }
       }); 
 
       if(!user){
-        return response
+        response
         .status(404)
         .json({
             message: "User doesn't exists."
-        })
+        }); 
+
+        return; 
       }
 
       if(!user.password){
-        return response
+        response
         .status(400)
         .json({
             message: "Password for OAuth user is missing, set it up."
         })
+
+        return; 
       }
 
     if(!password){
-        return response
+        response
         .status(400)
         .json({ message: "Password is required for Non-oAuth login."}); 
+
+        return; 
     }
 
     const isPasswordCorrect = await bcrypt.compare(password, user.password); 
     if(!isPasswordCorrect){
-        return response
+        response
         .status(401)
         .json({ message: "Password is incorrect."}); 
+
+        return; 
     }
 
     const token = jwt.sign({
         id: user.id,
+        name: user.name,
         email: user.email
     }, process.env.JWT_SECRET!, 
     {
@@ -158,17 +179,22 @@ class AuthController {
     }
     ); 
     
-    return response
+    response
     .status(200)
     .json({
         message: "User logged in successfully.",
         token,
         user: {
             id: user.id,
+            name: user.name,
             email: user.email
         }
     })
+
+    return;
   }
+
+  
 }
 
 export default AuthController;
