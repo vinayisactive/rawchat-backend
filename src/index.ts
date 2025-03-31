@@ -2,8 +2,7 @@ import express, { Request, Response } from "express";
 import { createServer } from "http";
 import cors from "cors";
 import apiV1Router from "./routes";
-import { Server } from "socket.io";
-import initializeSocketServer from "./socket";
+import initializeWebSocketServer from "./wss";
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -14,13 +13,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use("/api/v1", apiV1Router);
 
 const httpServer = createServer(app);
-export const io = new Server(httpServer, {
-  cors: {
-    origin: "*",
-  },
-});
-
-initializeSocketServer(io);
+initializeWebSocketServer(httpServer);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Rawchat-backend is up and running.");
